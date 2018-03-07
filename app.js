@@ -19,10 +19,34 @@ searchForm.addEventListener('submit',e => {
   searchInput.value = '';
   // Search Reddit
 
-  
-
-      // document.querySelector('.jokes').innerHTML = output;
-  getReddit(searchTerm, searchLimit, sortBy);
+  const reddit = new Reddit;
+  reddit.getReddit(searchTerm, searchLimit, sortBy)
+    .then(data => {
+      let output = '<div class="card-columns">';
+      data.forEach(postData => {
+        let post = postData.data;
+        const image = post.preview ? post.preview.images[0].source.url :
+        'https://cdn.comparitech.com/wp-content/uploads/2017/08/reddit-1.jpg';
+        
+        
+        output += `
+        <div class="card" style="width: 18rem;">
+        <img class="card-img-top" src="${image}" alt="Card image cap">
+        <div class="card-body">
+          <h5 class="card-title">${post.title}</h5>
+          <p class="card-text">${truncateText(post.selftext, 100)}</p>
+          <a href="${post.url}" target="_blank" class="btn btn-primary">Read more!</a>
+          <hr>
+          <span class="badge badge-secondary">Subreddit: ${post.subreddit}</span>
+          <span class="badge badge-dark">Score: ${post.score}</span>
+        </div>
+        </div>
+        `;
+      });
+      output += '</div>';
+      document.getElementById('results').innerHTML = output;
+    })
+    .catch(err => console.log(err));
    
   e.preventDefault();
 });
@@ -53,40 +77,13 @@ const truncateText = (text, limit) => {
   return text.substring(0, shortended);
 }
 
-function getReddit(searchTerm, searchLimit, sortBy) {
-  fetch(`https://www.reddit.com/search.json?q=${searchTerm}&sort=${sortBy}&limit=${searchLimit}`)
-    .then(function(res) {
-      return res.json();
+class Reddit {
+  getReddit(searchTerm, searchLimit, sortBy) {
+    return new Promise((resolve, reject) => {
+      fetch(`https://www.reddit.com/search.json?q=${searchTerm}&sort=${sortBy}&limit=${searchLimit}`)
+        .then(res => res.json())
+        .then(data => resolve(data.data.children))
+        .catch(err => reject(err))
     })
-    .then(function(data) {
-      let posts = data.data.children;
-      let output = '<div class="card-columns">';
-      console.log(posts);
-      posts.forEach(function(postData) {
-        let post = postData.data;
-        const image = post.preview ? post.preview.images[0].source.url :
-        'https://cdn.comparitech.com/wp-content/uploads/2017/08/reddit-1.jpg';
-        
-        
-        output += `
-        <div class="card" style="width: 18rem;">
-        <img class="card-img-top" src="${image}" alt="Card image cap">
-        <div class="card-body">
-          <h5 class="card-title">${post.title}</h5>
-          <p class="card-text">${truncateText(post.selftext, 100)}</p>
-          <a href="${post.url}" target="_blank" class="btn btn-primary">Read more!</a>
-          <hr>
-          <span class="badge badge-secondary">Subreddit: ${post.subreddit}</span>
-          <span class="badge badge-dark">Score: ${post.score}</span>
-        </div>
-        </div>
-        `;
-        
-      });
-      output += '</div>';
-      document.getElementById('results').innerHTML = output;
-    })
-    .catch(function(err) {
-      console.log(err);
-    })
+  }
 }
